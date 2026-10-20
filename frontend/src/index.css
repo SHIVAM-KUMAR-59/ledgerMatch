@@ -256,3 +256,17 @@ ul.row-list li {
     padding: 0 12px 32px;
   }
 }
+
+.sync {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.sync.failed,
+.airtable-line.failed {
+  color: var(--danger-text);
+}
+.airtable-line {
+  margin: 4px 0;
+}

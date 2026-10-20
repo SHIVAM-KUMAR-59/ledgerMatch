@@ -12,6 +12,21 @@ function RowList({ title, items, render }) {
   )
 }
 
+// Nothing is shown when the Airtable integration is switched off.
+function AirtableLine({ airtable }) {
+  if (!airtable?.enabled) return null
+  const parts = [`${airtable.synced} synced`]
+  if (airtable.failed) parts.push(`${airtable.failed} failed`)
+  if (airtable.remaining) parts.push(`${airtable.remaining} waiting`)
+  const problem = airtable.failed > 0 || Boolean(airtable.error)
+  return (
+    <p className={problem ? 'airtable-line failed' : 'muted'}>
+      Airtable: {parts.join(', ')}
+      {airtable.error ? ` — ${airtable.error}` : ''}
+    </p>
+  )
+}
+
 export default function UploadPanel({ busy, onUpload }) {
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -61,7 +76,11 @@ export default function UploadPanel({ busy, onUpload }) {
         </button>
       </form>
 
-      {error && <div style={{ marginTop: 12 }}><ErrorBox message={error} /></div>}
+      {error && (
+        <div style={{ marginTop: 12 }}>
+          <ErrorBox message={error} />
+        </div>
+      )}
 
       {summary && (
         <div className="summary">
@@ -76,6 +95,7 @@ export default function UploadPanel({ busy, onUpload }) {
               .map(([status, count]) => `${count} ${STATUS_LABELS[status].toLowerCase()}`)
               .join(', ')}
           </p>
+          <AirtableLine airtable={summary.airtable} />
           <RowList
             title="Rows with errors (skipped)"
             items={summary.errors}

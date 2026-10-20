@@ -5,7 +5,8 @@ function isActionable(txn) {
   return txn.status === 'suggested' || txn.status === 'needs_review'
 }
 
-// Which matches are worth showing for a row: the proposals still open, or the one that was approved. Rejected matches stay in the data but not on screen.
+// Which matches are worth showing for a row: the proposals still open, or the
+// one that was approved. Rejected matches stay in the data but not on screen.
 function visibleMatches(txn) {
   if (txn.status === 'reconciled') {
     return txn.matches.filter((m) => m.status === 'approved')
@@ -14,6 +15,26 @@ function visibleMatches(txn) {
     return txn.matches.filter((m) => m.status === 'proposed')
   }
   return []
+}
+
+// Only shown once a row has actually been sent to Airtable (or failed to be),
+// so nothing appears when the integration is switched off.
+function SyncNote({ txn }) {
+  if (txn.sync_status === 'synced') {
+    return (
+      <span className="sync" title={txn.airtable_record_id}>
+        Airtable: synced
+      </span>
+    )
+  }
+  if (txn.sync_status === 'sync_failed') {
+    return (
+      <span className="sync failed" title={txn.sync_error}>
+        Airtable: sync failed
+      </span>
+    )
+  }
+  return null
 }
 
 function TransactionRow({ txn, busy, actions }) {
@@ -39,6 +60,7 @@ function TransactionRow({ txn, busy, actions }) {
       </td>
       <td>
         <span className={`badge ${txn.status}`}>{STATUS_LABELS[txn.status]}</span>
+        <SyncNote txn={txn} />
       </td>
       <td>
         {matches.length === 0 ? (
@@ -81,7 +103,6 @@ function TransactionRow({ txn, busy, actions }) {
                   type="button"
                   disabled={busy}
                   onClick={() => actions.reject(m.id)}
-                  style={{backgroundColor: "#EE4B2B", color: "white"}}
                 >
                   Reject
                 </button>
