@@ -1,28 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-type ResourceLoader<T> = (signal?: AbortSignal) => Promise<T>
-
-interface UseResourceResult<T> {
-  data: T | null
-  error: Error | null
-  loading: boolean
-  reload: () => Promise<void>
-}
-
 /**
  * Loads data with `load(signal)` on mount and whenever `reload()` is called.
  * Old data stays visible while a reload runs, and a response that arrives
  * after a newer request (or after unmount) is ignored.
  */
-export function useResource<T>(load: ResourceLoader<T>): UseResourceResult<T> {
-  const [data, setData] = useState<T | null>(null)
-  const [error, setError] = useState<Error | null>(null)
+export function useResource(load) {
+  const [data, setData] = useState(null)
+  const [error, setError] = useState(null)
   const latest = useRef(0)
   const loadRef = useRef(load)
 
+  // eslint-disable-next-line react-hooks/refs
   loadRef.current = load
 
-  const refresh = useCallback(async (signal?: AbortSignal): Promise<void> => {
+  const refresh = useCallback(async (signal) => {
     const id = ++latest.current
 
     try {
@@ -32,7 +24,7 @@ export function useResource<T>(load: ResourceLoader<T>): UseResourceResult<T> {
         setData(result)
         setError(null)
       }
-    } catch (err: unknown) {
+    } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         return
       }
@@ -58,7 +50,7 @@ export function useResource<T>(load: ResourceLoader<T>): UseResourceResult<T> {
     }
   }, [refresh])
 
-  const reload = useCallback((): Promise<void> => {
+  const reload = useCallback(() => {
     setError(null)
     return refresh()
   }, [refresh])
