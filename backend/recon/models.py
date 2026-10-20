@@ -83,6 +83,11 @@ class BankTransaction(models.Model):
         CREDIT = "credit"
         DEBIT = "debit"
 
+    class SyncStatus(models.TextChoices):
+        NOT_SYNCED = "not_synced"
+        SYNCED = "synced"
+        SYNC_FAILED = "sync_failed"
+
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="transactions"
     )
@@ -93,6 +98,11 @@ class BankTransaction(models.Model):
     bank_reference = models.CharField(max_length=100)
     status = models.CharField(max_length=20, choices=Status.choices)
     reason = models.TextField(blank=True)
+    sync_status = models.CharField(
+        max_length=20, choices=SyncStatus.choices, default=SyncStatus.NOT_SYNCED
+    )
+    airtable_record_id = models.CharField(max_length=50, blank=True)
+    sync_error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
