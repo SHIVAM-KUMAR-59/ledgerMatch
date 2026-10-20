@@ -97,7 +97,7 @@ class SyncServiceTests(TestCase):
                 "Organization": "northwind",
                 "Date": "2026-04-09",
                 "Description": "UNKNOWN WIRE 1",
-                "Amount": "9999.99",
+                "Amount": 9999.99,
                 "Reason": "No reference found and no line item matches both investor name and amount.",
             },
         )
