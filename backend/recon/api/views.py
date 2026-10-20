@@ -1,15 +1,16 @@
+from django.db.models import Prefetch
 from rest_framework.exceptions import ParseError
 from rest_framework.generics import ListAPIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from recon.models import LineItem
+from recon.models import BankTransaction, LineItem, TransactionMatch
 from recon.services.csv_import import import_statement
 from recon.services.csv_parser import FileRejected
 
 from .scoping import OrgScopedMixin
-from .serializers import LineItemSerializer
+from .serializers import BankTransactionSerializer, LineItemSerializer
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
@@ -23,6 +24,16 @@ class LineItemListView(OrgScopedMixin, ListAPIView):
             .select_related("capital_call")
             .order_by("capital_call__number", "reference")
         )
+
+
+class TransactionListView(OrgScopedMixin, ListAPIView):
+    serializer_class = BankTransactionSerializer
+
+    def get_queryset(self):
+        matches = TransactionMatch.objects.select_related("line_item").order_by("id")
+        return BankTransaction.objects.filter(
+            organization=self.request.organization
+        ).prefetch_related(Prefetch("matches", queryset=matches))
 
 
 class TransactionImportView(OrgScopedMixin, APIView):

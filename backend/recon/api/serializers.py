@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from recon.models import LineItem
+from recon.models import BankTransaction, LineItem, TransactionMatch
 
 
 class LineItemSerializer(serializers.ModelSerializer):
@@ -16,4 +16,29 @@ class LineItemSerializer(serializers.ModelSerializer):
         fields = [
             "id", "investor_name", "reference", "call_number", "call_date",
             "due_date", "amount_called", "amount_funded", "remaining", "status",
+        ]
+
+
+class MatchLineItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LineItem
+        fields = ["id", "reference", "investor_name"]
+
+
+class TransactionMatchSerializer(serializers.ModelSerializer):
+    line_item = MatchLineItemSerializer(read_only=True)
+
+    class Meta:
+        model = TransactionMatch
+        fields = ["id", "status", "reason", "line_item"]
+
+
+class BankTransactionSerializer(serializers.ModelSerializer):
+    matches = TransactionMatchSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = BankTransaction
+        fields = [
+            "id", "date", "description", "amount", "type", "bank_reference",
+            "status", "reason", "created_at", "matches",
         ]
