@@ -47,3 +47,7 @@ Open http://localhost:5173. The Vite dev server proxies `/api` to Django on port
 ```bash
 cd backend && python manage.py test
 ```
+
+## Optional: Airtable sync
+
+Set `AIRTABLE_TOKEN`, `AIRTABLE_BASE_ID` and `AIRTABLE_TABLE` in `backend/.env` to push `needs_review` transactions to an Airtable table after each import. Leave them blank to disable it. Details and the expected table fields are in [ASSESSMENT_NOTES.md](ASSESSMENT_NOTES.md). `python manage.py sync_airtable` sends any rows that are still waiting.
