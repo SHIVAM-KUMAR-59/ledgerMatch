@@ -1,14 +1,17 @@
 """Push needs_review transactions to Airtable (optional bonus).
 
 Best effort and create-only. This runs after an import has committed, so a
-failure here can never undo or break the import. The client is passed in, so
-tests hand it a fake and never touch the network.
+failure here can never undo or break the import. The client is built in one
+place (build_airtable_client) and passed in, so tests hand it a fake and never
+touch the network.
 """
 
 import logging
 import time
 
-from recon.integrations.airtable import AirtableError
+from django.conf import settings
+
+from recon.integrations.airtable import AirtableError, build_airtable_client
 from recon.models import BankTransaction
 
 logger = logging.getLogger(__name__)
@@ -19,6 +22,27 @@ PAUSE_SECONDS = 0.25  # stay under Airtable's 5 requests per second per base
 TXN = BankTransaction.Status
 SYNC = BankTransaction.SyncStatus
 SYNC_FIELDS = ["airtable_record_id", "sync_status", "sync_error"]
+
+
+def sync_after_import(organization):
+    """Entry point for the import view. Always returns a summary dict and never
+    raises, whatever goes wrong: the import has already been saved."""
+    try:
+        client = build_airtable_client()
+        if client is None:
+            return {"enabled": False}
+        return sync_needs_review(
+            client, organization, limit=settings.AIRTABLE_MAX_PER_IMPORT
+        )
+    except Exception:
+        logger.exception("Airtable sync crashed after an import")
+        return {
+            "enabled": True,
+            "synced": 0,
+            "failed": 0,
+            "remaining": None,
+            "error": "Sync could not run; the import itself succeeded.",
+        }
 
 
 def sync_needs_review(client, organization, limit=None, pause=PAUSE_SECONDS):

@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from recon.models import BankTransaction, LineItem, TransactionMatch
 from recon.services import reconciliation
+from recon.services.airtable_sync import sync_after_import
 from recon.services.csv_import import import_statement
 from recon.services.csv_parser import FileRejected
 
@@ -62,6 +63,9 @@ class TransactionImportView(OrgScopedMixin, APIView):
             summary = import_statement(request.organization, upload.read())
         except FileRejected as exc:
             raise ParseError(str(exc)) from None
+        # The import has committed by now. The optional Airtable sync runs after
+        # it and can never undo it (sync_after_import does not raise).
+        summary["airtable"] = sync_after_import(request.organization)
         return Response(summary)
 
 
