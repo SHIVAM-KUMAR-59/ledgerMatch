@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import sys
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -125,3 +126,13 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# Airtable sync (optional). Leave blank to disable; the app works without it.
+AIRTABLE_TOKEN = env("AIRTABLE_TOKEN", default="")
+AIRTABLE_BASE_ID = env("AIRTABLE_BASE_ID", default="")
+AIRTABLE_TABLE = env("AIRTABLE_TABLE", default="")
+AIRTABLE_MAX_PER_IMPORT = env.int("AIRTABLE_MAX_PER_IMPORT", default=100)
+
+# Tests must never reach the real Airtable, even if .env holds real credentials.
+if len(sys.argv) > 1 and sys.argv[1] == "test":
+    AIRTABLE_TOKEN = AIRTABLE_BASE_ID = AIRTABLE_TABLE = ""

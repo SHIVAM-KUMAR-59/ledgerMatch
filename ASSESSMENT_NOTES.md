@@ -149,6 +149,23 @@ Worth noting in a demo:
 - Import runs synchronously inside the request. That is fine for a few thousand rows, which is the stated size, and the spec rules out background workers.
 - The frontend has no automated tests. Backend tests carry the correctness requirements.
 
+## Bonus: Airtable sync
+
+Optional. When `AIRTABLE_TOKEN`, `AIRTABLE_BASE_ID` and `AIRTABLE_TABLE` are all set, `needs_review` transactions are sent to that table after an import. With them blank (the default), nothing happens and the import response says `"airtable": {"enabled": false}`.
+
+Table setup: one table with these text fields: `Bank Reference` (primary), `Organization`, `Date`, `Description`, `Amount`, `Reason`. Create a personal access token with the `data.records:write` scope for that base. Airtable rejects unknown field names.
+
+How it behaves:
+- Runs after the import transaction has committed, so an Airtable failure can never break or roll back an import. Every exception is caught and reported in the response.
+- Create-only. Records go in batches of 10 (Airtable's limit) with a short pause between batches.
+- Each transaction stores `sync_status` (`not_synced`, `synced`, `sync_failed`), the `airtable_record_id` and a short `sync_error`.
+- At most `AIRTABLE_MAX_PER_IMPORT` (default 100) rows are sent per import, because the import runs inside the request and there are no background workers. The rest stay `not_synced`.
+- On the first failure the run stops: that batch is `sync_failed` and the remaining rows stay `not_synced`.
+- Failed rows are not retried automatically, because a timed-out request may already have created the record and a blind retry could duplicate it. `python manage.py sync_airtable` sends pending rows. Add `--retry-failed` to re-send failed ones (accepting the duplicate risk), and `--org` or `--limit` to narrow it.
+- The client is a small class (`recon/integrations/airtable.py`) built in one place and passed into the sync service, so tests use a fake. `manage.py test` forces the Airtable settings blank, so tests can never reach the real service.
+
+Known limitation: two imports for the same organization running at the same instant could both pick the same pending rows and create duplicate Airtable records. Avoiding that needs a "claimed" state or holding locks during HTTP calls, which I chose not to do.
+
 ## Next steps
 
 - Pagination and filtering on the transaction list.
