@@ -98,7 +98,7 @@ def _fields(organization, txn):
         "Organization": organization.slug,
         "Date": txn.date.isoformat(),
         "Description": txn.description,
-        "Amount": str(txn.amount),
+        "Amount": float(txn.amount),
         "Reason": txn.reason,
     }
 
